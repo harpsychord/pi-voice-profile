@@ -1,0 +1,22 @@
+{
+  "name": "pi-voice-profile",
+  "version": "2.1.0",
+  "description": "Pi extension that injects a voice profile document into the system prompt, defining a conversational register for assistant replies.",
+  "keywords": [
+    "pi-package",
+    "pi-extension",
+    "voice",
+    "style",
+    "prompt"
+  ],
+  "license": "GPL-3.0-only",
+  "author": "Harper Sanford",
+  "repository": "github.com/harpsychord/pi-voice-profile",
+  "homepage": "https://github.com/harpsychord/pi-voice-profile#readme",
+  "files": [
+    "extensions/"
+  ],
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  }
+}
