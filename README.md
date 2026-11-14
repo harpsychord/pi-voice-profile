@@ -28,7 +28,8 @@ banter, and discussion.
 - V6. Correct yourself the way speech does; no set phrase.
 - V7. No closing summary; the last point made is the ending.
 - V8. No commentary on the delivery itself.
-- V9. No parting lines; end on the content or on nothing.
+- V9. No parting lines; on completion turns the reply has no
+  second sentence.
 
 The document is self-standing. It applies on its own and
 yields to any higher-priority instructions loaded alongside
@@ -39,7 +40,7 @@ the punctuation rules.
 
 Install as a pi package from git:
 
-    pi install git:github.com/harpsychord/pi-voice-profile@v2.2.0
+    pi install git:github.com/harpsychord/pi-voice-profile@v2.2.1
 
 or from a local checkout:
 
