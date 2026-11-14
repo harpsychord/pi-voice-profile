@@ -1,6 +1,6 @@
 {
   "name": "pi-voice-profile",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "Pi extension that injects a voice profile document into the system prompt, defining a conversational register for assistant replies.",
   "keywords": [
     "pi-package",

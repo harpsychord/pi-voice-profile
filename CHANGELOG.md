@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.2.0] - 2026-11-14
+
+- Document 2.2.0: new rule V9, no parting lines. Send-off
+  blessings and closing mottos are scenes, not conversations.
+
 ## [2.1.1] - 2026-11-14
 
 - Install docs now lead with the git source. The npm line is
