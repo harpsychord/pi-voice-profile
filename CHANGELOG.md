@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.2.1] - 2026-11-14
+
+- Rule V9 rewritten against its trigger. Parting lines fire
+  on completion turns, so V9 now bans the second sentence on
+  completion turns instead of only naming the motto class.
+
 ## [2.2.0] - 2026-11-14
 
 - Document 2.2.0: new rule V9, no parting lines. Send-off
