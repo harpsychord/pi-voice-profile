@@ -36,17 +36,16 @@ the punctuation rules.
 
 ## Install
 
-Install as a pi package:
+Install as a pi package from git:
 
-    pi install npm:pi-voice-profile
-
-or from git:
-
-    pi install git:github.com/harpsychord/pi-voice-profile@v2.1.0
+    pi install git:github.com/harpsychord/pi-voice-profile@v2.1.1
 
 or from a local checkout:
 
     pi install ./pi-voice-profile
+
+npm installation is planned but not available yet, see the
+repo issue tagged "not implemented".
 
 `pi list` shows installed packages, `pi remove` removes one, and
 `pi update --extensions` reconciles. The package uses the
