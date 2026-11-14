@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.1.1] - 2026-11-14
+
+- Install docs now lead with the git source. The npm line is
+  withdrawn until npm publishing is implemented, tracked by the
+  repo issue tagged "not implemented".
+
 ## [2.1.0] - 2026-11-14
 
 - Package layout for pi package distribution: extension code and
