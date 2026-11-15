@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.2.2] - 2026-11-14
+
+- Rule V6 rewritten after two observed failures, dated in
+  references/catches.md. The acknowledgment must name the
+  specific error in one short clause; user-directed agreement
+  ("you're right," "good catch," "fair," "exactly") is barred
+  as an opener. Rule V1 is unchanged; its value-preview clause
+  already covered the other failure, so that one is kept as
+  test evidence only.
+
 ## [2.2.1] - 2026-11-14
 
 - Rule V9 rewritten against its trigger. Parting lines fire
