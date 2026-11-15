@@ -40,7 +40,7 @@ the punctuation rules.
 
 Install as a pi package from git:
 
-    pi install git:github.com/harpsychord/pi-voice-profile@v2.2.1
+    pi install git:github.com/harpsychord/pi-voice-profile
 
 or from a local checkout:
 

@@ -4,6 +4,14 @@ Regression evidence for the voice profile. Real failures,
 dated and quoted. Not loaded into the prompt; a test set for
 reviewing revisions.
 
+## 2026-11-15
+
+### Standalone value preview (V1.2)
+
+> A few other threads worth a glance.
+
+Context: standalone preview sentence opening a paragraph; the following sentences carried the material. "worth a glance" rates the material before it is carried. Named by V1.2 in review, not prevented under 2.3.1. Resolved in 2.3.2: V1.2 counts a value qualifier in the preview phrase itself as the rating wherever it sits.
+
 ## 2026-11-14
 
 ### Value preview (V1.2)

@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.3.2] - 2026-11-15
+
+- Rule V1.2 extended against its trigger, dated in
+  references/catches.md as "Standalone value preview". A value
+  qualifier in the preview phrase itself, "worth a glance",
+  walked past V1.2 under 2.3.1 even though the clause names
+  the form in review; the form is a standalone fragment with
+  no colon and no landing frame. V1.2 now counts a value
+  qualifier in the preview phrase as a rating wherever it
+  sits, alone, before a colon, or fused.
+
 ## [2.3.1] - 2026-11-14
 
 - Rule V1.2 extended against its trigger, dated in
