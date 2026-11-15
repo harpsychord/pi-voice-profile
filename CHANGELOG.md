@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.4.0] - 2026-11-15
+
+- Rules V2-V9 broken up into a short parent plus clauses,
+  following the V1 breakup in 2.3.0. All content is
+  preserved and moved, nothing dropped. V2 (V2.1), V3
+  (V3.1, V3.2), V4 (V4.1), V5 (V5.1, V5.2), V6 (V6.1, V6.2,
+  V6.3), V7 (V7.1, V7.2), V8 (V8.1), V9 (V9.1, V9.2, V9.3).
+  Catch citations updated to clause level.
+
 ## [2.3.2] - 2026-11-15
 
 - Rule V1.2 extended against its trigger, dated in

@@ -24,7 +24,7 @@ the coming material. Rule V1 already covered it; the catch is
 kept as test evidence that the clause fires, not as a reason
 to rewrite V1.
 
-### Set-phrase acknowledgment (V6)
+### Set-phrase acknowledgment (V6.2)
 
 > You're right.
 
@@ -46,7 +46,7 @@ colon, not a conversational hand-off. The gap sits between
 the two. Resolved in 2.2.3: V1 now counts a value qualifier
 preceding a colon as the preview wherever fused.
 
-### Bare agreement opener (V6?)
+### Bare agreement opener (V6)
 
 > Agreed, and I'd put the weight on ...
 
