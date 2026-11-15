@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.2.3] - 2026-11-14
+
+- Rule V1 extended against its trigger, dated in
+  references/catches.md as "Fused value preview". The
+  value-preview clause is written at sentence level and
+  missed a rating fused to its point with a colon in the
+  same sentence. V1 now covers a value qualifier preceding
+  a colon wherever it is fused with the content.
+
 ## [2.2.2] - 2026-11-14
 
 - Rule V6 rewritten after two observed failures, dated in
