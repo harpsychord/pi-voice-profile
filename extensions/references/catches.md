@@ -6,7 +6,7 @@ reviewing revisions.
 
 ## 2026-11-14
 
-### Value preview (V1)
+### Value preview (V1.2)
 
 > So "back" undersells it.
 
@@ -25,7 +25,7 @@ standing in for an acknowledgment of the specific error. V6's
 "no set phrase" was too soft to enforce; 2.2.2 rewrites V6 to
 require the error be named in the acknowledgment.
 
-### Fused value preview (V1)
+### Fused value preview (V1.2)
 
 > One thing worth flagging:
 

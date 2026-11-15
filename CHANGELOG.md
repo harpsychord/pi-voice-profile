@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.3.0] - 2026-11-14
+
+- Rule V1 broken up into a short parent plus clauses V1.1
+  (start from the concrete), V1.2 (no preview), V1.3 (no
+  grading), and V1.4 (no mechanical scaffolding). All V1
+  content is preserved and moved, nothing dropped. V2-V9
+  unchanged. Catch citations updated to clause level.
+
 ## [2.2.4] - 2026-11-14
 
 - Rule V6 extended from correction turns to agreement turns,
