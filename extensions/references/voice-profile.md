@@ -1,4 +1,4 @@
-**Record status:** Pending owner approval (revision of the 2.2.1 accepted version).
+**Record status:** Accepted as the current standing version (owner approval 2026-11-14).
 **Version:** 2.2.2. **Responsible owner:** Harper Sanford.
 **Created:** 2026-11-14. **Last updated:** 2026-11-14.
 **Scope:** Conversational register for assistant replies.
@@ -79,9 +79,6 @@ from published copies. It is the test set for reviewing
 revisions.
 
 ## Next action
-Owner approval is pending for 2.2.2. On approval, update the
-record status line and tag the version; otherwise the 2.2.1
-accepted version remains the standing one. Future revisions
-follow the recursive application clause, are checked against
-the catches file, carry a version bump, and require owner
-approval.
+None pending. Future revisions follow the recursive application
+clause, are checked against the catches file, carry a version
+bump, and require owner approval.
