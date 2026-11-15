@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.2.4] - 2026-11-14
+
+- Rule V6 extended from correction turns to agreement turns,
+  dated in references/catches.md as "Bare agreement opener".
+  Set-phrase agreement ("Agreed," "You're right," "good
+  catch," "fair," "exactly") is barred as an opener wherever
+  it stands in for naming the specific point.
+
 ## [2.2.3] - 2026-11-14
 
 - Rule V1 extended against its trigger, dated in
