@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.3.1] - 2026-11-14
+
+- Rule V1.2 extended against its trigger, dated in
+  references/catches.md as "Standalone value preview". A
+  preview that reads as a hedge, "matters more than it
+  sounds", walked past V1.2 under 2.3.0 even though the
+  clause names the form in review. V1.2 now counts a rating
+  framed as how the material will land as a rating.
+- README rule count corrected from eight to nine. V9 was
+  added in 2.2.0 and the intro line never followed.
+
 ## [2.3.0] - 2026-11-14
 
 - Rule V1 broken up into a short parent plus clauses V1.1

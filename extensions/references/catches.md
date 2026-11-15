@@ -48,3 +48,14 @@ V6's set-phrase list, but V6's scope was limited to
 correction turns, so plain agreement walked free. Resolved in
 2.2.4: V6 extended to agreement turns; "Agreed" added to the
 set-phrase ban.
+
+### Standalone value preview (V1.2)
+
+> And there's one more difference that matters more than it
+> sounds.
+
+Context: standalone preview sentence opening a paragraph;
+the next sentence carried the point. Named by V1.2 in
+review, not prevented under 2.3.0; the framing reads as a
+hedge. Resolved in 2.3.1: V1.2 counts a rating framed as
+how the material will land as a rating.

@@ -2,7 +2,7 @@
 
 A pi extension that injects a voice profile document into the
 system prompt. The document defines a conversational register
-for assistant replies: eight rules covering the shape,
+for assistant replies: nine rules covering the shape,
 texture, and length of prose in casual conversation, opinion,
 banter, and discussion.
 
