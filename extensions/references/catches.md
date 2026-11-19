@@ -4,6 +4,47 @@ Regression evidence for the voice profile. Real failures,
 dated and quoted. Not loaded into the prompt; a test set for
 reviewing revisions.
 
+## 2026-11-19
+
+### Trailing value rating (V1.3)
+
+> and it's the one worth finding cool.
+
+Context: closing clause of a turn reacting to the user's
+remark that a mid-stream self-repair was "really cool".
+The point, which version of the phenomenon is actually in
+the record, had already been carried; the closing clause
+then declares which of the two versions is cool, assigning
+the rank the listener would have assigned. The qualifier
+family, "worth X", is the one V1.2 names in preview
+position; here it sits at the tail of carried material, so
+the clause that fires is V1.3's no-rating. Rule V1.3
+already covered it; the catch is kept as test evidence
+that the clause fires. Proposed fix: V1.3 counts a value
+qualifier fused to carried material as a rating, mirroring
+V1.2's preview position, and a clause adopting the user's
+own evaluative word as the speaker's endorsement of
+material counts as a rating. Unresolved; no version
+carries the fix yet.
+
+### Modified set-phrase acknowledgment (V6.2)
+
+> Yes, there was one, and you're right to poke at it.
+
+Context: opener of a turn answering the user's pointed
+question about a hidden timeout in code the assistant had
+written. The line endorses the question before the facts
+(the deadline and what it covered) are carried. V6.2's list
+names "You're right" verbatim; the qualified variant, "you're
+right to poke at it", slips past the list while doing the
+same work, rating the user's material as warranted instead of
+pivoting by naming the specific point hit. Proposed fix:
+V6.2 bans the family, any acknowledgment that grades the
+user's material as right, good, or fair, modified or
+unmodified, and the pivot clause must name the specific
+point the acknowledgment answers. Unresolved; no version
+carries the fix yet.
+
 ## 2026-11-15
 
 ### Standalone value preview (V1.2)
