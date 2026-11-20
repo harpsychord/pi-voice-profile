@@ -67,7 +67,10 @@ The returned handle exposes `proxyActive()` (true once this extension claimed th
 
 ## Testing
 
-Behavior is covered by a differential test harness (mock pi, scripted scenarios) that compares a module against a reference trace for: the proxy solo, relay in both load orders, the backstop, the `maybeRelay` fallback and its queue-failure path, the proxy guard clauses, and user messages carrying images. The harness lives outside the extension directory; the four live smoke cases (greedy in both directions, no-greedy single-extension in both directions) are the executable check against a real pi instance.
+Two verification levels live in [`test/`](test/README.md):
+
+- **Differential test** — a mock-pi harness runs ten scripted scenarios (proxy solo, relay in both load orders, backstop, the `maybeRelay` fallback and its queue-failure path, proxy guard clauses, user messages with images) and compares the observable trace against a reference baseline generated from the original implementation. No pi required; `cd test && npm install && node harness.mjs`.
+- **Live smoke test** — real pi sessions with one or two module-using extensions, verifying block order, the prompt landing last exactly once, and confirmed turns between blocks. `cd test && node smoke.mjs <ext1.ts> [ext2.ts]`.
 
 ## License
 

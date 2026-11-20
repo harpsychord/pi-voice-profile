@@ -1,0 +1,12 @@
+{
+	"name": "first-turn-relay-tests",
+	"private": true,
+	"type": "module",
+	"devDependencies": {
+		"esbuild": "^0.28.2"
+	},
+	"scripts": {
+		"differential": "node harness.mjs",
+		"smoke": "node smoke.mjs"
+	}
+}

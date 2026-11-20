@@ -1,0 +1,354 @@
+{
+ "S1 proxy solo": {
+  "results": [
+   "handled"
+  ],
+  "trace": [
+   {
+    "op": "entry",
+    "type": "relay-handshake",
+    "data": {
+     "role": "slot-holder",
+     "sid": "SID",
+     "userMsg": "hello"
+    }
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "P1 directive block",
+    "deliverAs": "followUp"
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "hello",
+    "deliverAs": "followUp"
+   }
+  ]
+ },
+ "S2 A proxy / B relay": {
+  "results": [
+   "handled",
+   "passed"
+  ],
+  "trace": [
+   {
+    "op": "entry",
+    "type": "relay-handshake",
+    "data": {
+     "role": "slot-holder",
+     "sid": "SID",
+     "userMsg": "hello"
+    }
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "A directive block",
+    "deliverAs": "followUp"
+   },
+   {
+    "op": "entry",
+    "type": "relay-handshake",
+    "data": {
+     "role": "relay",
+     "sid": "SID"
+    }
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "B directive block",
+    "deliverAs": "followUp"
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "hello",
+    "deliverAs": "followUp"
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "hello",
+    "deliverAs": "followUp"
+   }
+  ]
+ },
+ "S2b B proxy / A relay": {
+  "results": [
+   "handled",
+   "passed"
+  ],
+  "trace": [
+   {
+    "op": "entry",
+    "type": "relay-handshake",
+    "data": {
+     "role": "slot-holder",
+     "sid": "SID",
+     "userMsg": "hello"
+    }
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "B directive block",
+    "deliverAs": "followUp"
+   },
+   {
+    "op": "entry",
+    "type": "relay-handshake",
+    "data": {
+     "role": "relay",
+     "sid": "SID"
+    }
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "A directive block",
+    "deliverAs": "followUp"
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "hello",
+    "deliverAs": "followUp"
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "hello",
+    "deliverAs": "followUp"
+   }
+  ]
+ },
+ "S3 backstop": {
+  "results": [
+   "handled"
+  ],
+  "trace": [
+   {
+    "op": "entry",
+    "type": "relay-handshake",
+    "data": {
+     "role": "slot-holder",
+     "sid": "SID",
+     "userMsg": "hello"
+    }
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "P1 directive block",
+    "deliverAs": "followUp"
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "hello",
+    "deliverAs": null
+   }
+  ]
+ },
+ "S4 maybeRelay (seeded)": {
+  "results": [
+   "passed"
+  ],
+  "trace": [
+   {
+    "op": "entry",
+    "type": "relay-handshake",
+    "data": {
+     "role": "relay",
+     "sid": "SID"
+    }
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "P1 directive block",
+    "deliverAs": "followUp"
+   }
+  ]
+ },
+ "S4b maybeRelay (own block seed)": {
+  "results": [
+   "passed"
+  ],
+  "trace": [
+   {
+    "op": "entry",
+    "type": "relay-handshake",
+    "data": {
+     "role": "relay",
+     "sid": "SID"
+    }
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "P1 directive block",
+    "deliverAs": "followUp"
+   }
+  ]
+ },
+ "S4c maybeRelay (no seed)": {
+  "results": [
+   "handled"
+  ],
+  "trace": [
+   {
+    "op": "entry",
+    "type": "relay-handshake",
+    "data": {
+     "role": "relay",
+     "sid": "SID"
+    }
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "P1 directive block",
+    "deliverAs": "followUp"
+   },
+   {
+    "op": "entry",
+    "type": "relay-handshake",
+    "data": {
+     "role": "slot-holder",
+     "sid": "SID",
+     "userMsg": "hello"
+    }
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "P1 directive block",
+    "deliverAs": "followUp"
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "hello",
+    "deliverAs": "followUp"
+   }
+  ]
+ },
+ "S5 guard clauses": {
+  "results": [
+   "passed",
+   "passed",
+   "handled",
+   "passed"
+  ],
+  "trace": [
+   {
+    "op": "entry",
+    "type": "relay-handshake",
+    "data": {
+     "role": "slot-holder",
+     "sid": "SID",
+     "userMsg": "hello"
+    }
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "P1 directive block",
+    "deliverAs": "followUp"
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "hello",
+    "deliverAs": "followUp"
+   }
+  ]
+ },
+ "S6 relay with image": {
+  "results": [
+   "handled"
+  ],
+  "trace": [
+   {
+    "op": "entry",
+    "type": "relay-handshake",
+    "data": {
+     "role": "slot-holder",
+     "sid": "SID",
+     "userMsg": "hello"
+    }
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "A directive block",
+    "deliverAs": "followUp"
+   },
+   {
+    "op": "entry",
+    "type": "relay-handshake",
+    "data": {
+     "role": "relay",
+     "sid": "SID"
+    }
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "B directive block",
+    "deliverAs": "followUp"
+   },
+   {
+    "op": "send",
+    "kind": "parts",
+    "text": [
+     "hello",
+     {
+      "image": true
+     }
+    ],
+    "deliverAs": "followUp"
+   },
+   {
+    "op": "send",
+    "kind": "parts",
+    "text": [
+     "hello",
+     {
+      "image": true
+     }
+    ],
+    "deliverAs": "followUp"
+   }
+  ]
+ },
+ "S7 maybeRelay failure": {
+  "results": [
+   "handled"
+  ],
+  "trace": [
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "P1 directive block",
+    "deliverAs": "followUp"
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "zzz",
+    "deliverAs": "followUp"
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "P1 directive block",
+    "deliverAs": "followUp"
+   }
+  ]
+ }
+}
