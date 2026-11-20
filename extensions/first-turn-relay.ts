@@ -32,9 +32,10 @@ export interface HandshakeData {
 
 /** Timing knobs, all small relative to a model turn. */
 export const TIMING = {
-	/** Relay: attempts x ms of polling to see whether its own proxy took the slot. */
-	relayPollAttempts: 7,
+	/** Relay: polling interval (ms) of the wait for the first turn to be taken. */
 	relayPollMs: 50,
+	/** Vestigial: the relay wait is unbounded; kept so the public API is stable. */
+	relayPollAttempts: 7,
 	/** Slot-holder: attempts x ms of waiting for a relay to announce. */
 	proxyRelayWaitAttempts: 9,
 	proxyRelayWaitMs: 50,
@@ -215,11 +216,13 @@ export function createFirstTurnRelay(
 			return;
 		}
 		void (async () => {
-			// Wait for the first user message instead of betting on a
+			// Wait for the first turn to be taken instead of betting on a
 			// timer: /new and a slow first reply must not get blocks
-			// injected into an empty session. No deadline; the wait
-			// dies with the instance on reload or session end.
-			while (!proxyActive && userEntryTexts(ctx).length === 0) {
+			// injected into an empty session. No deadline; the wait dies
+			// with the instance on reload or session end. The slot-holder
+			// announces before its user message is delivered, so the entry
+			// is a reliable signal here and in tests.
+			while (!proxyActive && userEntryTexts(ctx).length === 0 && !slotHolderEntry(ctx)) {
 				await sleep(TIMING.relayPollMs);
 			}
 			if (proxyActive) return;

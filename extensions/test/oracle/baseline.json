@@ -166,17 +166,26 @@
    }
   ]
  },
- "S4b maybeRelay (own block seed)": {
-  "results": [
-   "passed"
-  ],
-  "trace": []
- },
- "S4c maybeRelay (no seed)": {
+ "S8 /new idle then message": {
   "results": [
    "handled"
   ],
   "trace": [
+   {
+    "op": "entry",
+    "type": "relay-handshake",
+    "data": {
+     "role": "slot-holder",
+     "sid": "SID",
+     "userMsg": "hello"
+    }
+   },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "A directive block",
+    "deliverAs": "followUp"
+   },
    {
     "op": "entry",
     "type": "relay-handshake",
@@ -188,9 +197,28 @@
    {
     "op": "send",
     "kind": "text",
-    "text": "P1 directive block",
+    "text": "B directive block",
     "deliverAs": "followUp"
    },
+   {
+    "op": "send",
+    "kind": "text",
+    "text": "hello",
+    "deliverAs": "followUp"
+   }
+  ]
+ },
+ "S4b maybeRelay (own block seed)": {
+  "results": [
+   "passed"
+  ],
+  "trace": []
+ },
+ "S4c maybeRelay (no seed)": {
+  "results": [
+   "handled"
+  ],
+  "trace": [
    {
     "op": "entry",
     "type": "relay-handshake",

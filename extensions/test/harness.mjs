@@ -185,6 +185,21 @@ async function s2Relay(mod, labels) {
 	return { results: [r, r2], trace: normalizeTrace(w.trace) };
 }
 
+async function s8NewIdle(mod, labels) {
+	const w = makeWorld();
+	const pi = w.makePi();
+	for (const n of labels) {
+		mod(pi, { label: n, directivePrefix: n + " directive", block: () => n + " directive block" });
+	}
+	await pi.fireSessionStart();
+	// /new case: the first message arrives well after session_start,
+	// when the old 350ms relay poll would have fired into the empty session.
+	await sleep(1000);
+	const r = await w.dispatchInput({ source: "user", text: "hello", streamingBehavior: undefined });
+	await sleep(500);
+	return { results: [r], trace: normalizeTrace(w.trace) };
+}
+
 // S3: backstop. The proxy's follow-up queue fails for the block; on
 // agent_settled (no relay, nothing held-queued) the held user message is
 // delivered plainly.
@@ -281,6 +296,7 @@ const SCENARIOS = [
 	["S2b B proxy / A relay", (m) => s2Relay(m, ["B", "A"])],
 	["S3 backstop", s3Backstop],
 	["S4 maybeRelay (seeded)", (m) => s4MaybeRelay(m, "hi there")],
+	["S8 /new idle then message", (m) => s8NewIdle(m, ["A", "B"])],
 	["S4b maybeRelay (own block seed)", (m) => s4MaybeRelay(m, "P1 directive something")],
 	["S4c maybeRelay (no seed)", (m) => s4MaybeRelay(m, null)],
 	["S5 guard clauses", s5Guards],
