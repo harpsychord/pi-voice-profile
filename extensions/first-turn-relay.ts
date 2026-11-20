@@ -1,95 +1,24 @@
 /**
  * first-turn-relay.ts
  *
- * A first-turn slot protocol for pi extensions.
+ * First-turn slot protocol for pi extensions. The extension whose input
+ * handler takes the first user message of a new session becomes the
+ * slot-holder and delivers its block first; the others announce as
+ * relays and deliver their blocks; the user's original message lands
+ * last, exactly once.
  *
- * Problem
- *   Two or more extensions may each want to own the first turn of a new
- *   session: inject a block of instructions (a guidance set, a style
- *   profile, ...), let the model confirm it, and only then deliver the
- *   user's original message. Pi dispatches the `input` event to handlers
- *   in registration order and the first handler to return "handled"
- *   wins — the remaining handlers do not run for that event. Without a
- *   protocol, exactly one extension wins the slot and the other's block
- *   is lost (or duplicated by naive fallbacks).
+ * Coordination is through custom session entries only — extensions do
+ * not import each other or share memory:
+ *   slot-holder: { customType: "relay-handshake", data: { role: "slot-holder", sid, userMsg } }
+ *   relay:       { customType: "relay-handshake", data: { role: "relay", sid } }
  *
- * Protocol
- *   The extension whose input handler claims the first user message
- *   (determined by extension load/registration order) becomes the
- *   slot-holder. Extensions whose input handler did not run become
- *   relays.
- *
- *   Slot-holder (this module's input proxy handler):
- *     1. announces itself with a custom session entry
- *            { customType: "relay-handshake",
- *              data: { role: "slot-holder", sid, userMsg } }
- *        where userMsg is the user's original message text, trimmed;
- *     2. queues its block as a follow-up;
- *     3. waits up to ~450ms for a relay to announce itself (relays
- *        announce at session_start + ~350ms); when one appears, waits a
- *        short settle delay so the relay's block is ahead in the
- *        follow-up queue;
- *     4. queues the user's message as a follow-up — behind the relay's
- *        block when a relay is present, right behind its own block
- *        otherwise;
- *     5. keeps a private backstop copy of the user's message; on
- *        agent_settled it delivers that copy only if the follow-up queue
- *        failed and no relay announced itself.
- *
- *   Relay (this module's session_start path + dedupe input handler):
- *     1. after ~350ms (7x50ms) of confirming its own proxy did not take
- *        the slot, announces itself with
- *            { customType: "relay-handshake", data: { role: "relay", sid } }
- *        and reads the slot-holder's entry to learn userMsg;
- *     2. queues its own block as a follow-up (immediately after the
- *        announcement, so the slot-holder's settle delay covers it);
- *     3. a dedupe input handler re-queues exactly the announced userMsg
- *        (the slot-holder's delivery passes through the relay's input
- *        pipeline as source "extension") so the user's message lands
- *        behind the relay's block. Any other text — including the
- *        slot-holder's own block, if it arrives after the relay armed —
- *        passes through untouched. Duplicate deliveries of the relay's
- *        own block are suppressed.
- *
- *   Net order in a two-extension session: slot-holder's block, relay's
- *   block, the user's message (exactly once).
- *
- *   Coordination is through public session entries only. Extensions do
- *   not import each other or share memory. A slot-holder that does not
- * already
- *   implement the protocol (no handshake entry) is handled by
- *   observation: the relay's maybeRelay fallback queues its block after
- *   the first settlement and leaves the user's message with the
- *   slot-holder.
- *
- * Usage
- *   Copy this file into your extension directory (or import it from a
- *   shared location) and call createFirstTurnRelay from your extension's
- *   factory:
- *
- *     import { createFirstTurnRelay } from "./first-turn-relay.ts";
- *
- *     export default function (pi: ExtensionAPI) {
- *       createFirstTurnRelay(pi, {
- *         label: "My extension",        // used in UI notifications
- *         directivePrefix: "Apply this", // prefix unique to your block
- *         block: () => myBlockText(),    // the block to inject
- *       });
- *     }
- *
- *   The module registers four handlers: an input proxy (claims the
- *   slot), a session_start relay path, an agent_settled backstop, and a
- *   second input handler (the dedupe). For your own session_start or
- *   agent_settled behavior, use the onSessionStart / onSettled hooks.
- *   Keep any other extension-specific handlers (before_agent_start,
- *   session_compact, ...) in your own extension file.
+ * See README.md for the full protocol, timing, and adoption guide.
  *
  * License: GPL-3.0.
  */
 
 import type { ExtensionAPI, ExtensionContext, InputEvent } from "@earendil-works/pi-coding-agent";
 
-/** Custom session entry type used for protocol announcements. */
 export const HANDSHAKE_TYPE = "relay-handshake";
 
 export type HandshakeRole = "slot-holder" | "relay";
@@ -101,35 +30,26 @@ export interface HandshakeData {
 	userMsg?: string;
 }
 
-/** Timing knobs. All delays are small relative to model turn duration. */
+/** Timing knobs, all small relative to a model turn. */
 export const TIMING = {
-	/** Relay: attempts x ms of polling for the slot-holder's proxy to engage. */
+	/** Relay: attempts x ms of polling to see whether its own proxy took the slot. */
 	relayPollAttempts: 7,
 	relayPollMs: 50,
 	/** Slot-holder: attempts x ms of waiting for a relay to announce. */
 	proxyRelayWaitAttempts: 9,
 	proxyRelayWaitMs: 50,
-	/** Slot-holder: settle delay after seeing a relay announcement. */
+	/** Slot-holder: settle delay once a relay has announced. */
 	proxyRelaySettleMs: 150,
 } as const;
 
 export interface FirstTurnRelayConfig {
 	/** Short label for UI notifications, e.g. "Vera guidance". */
 	label: string;
-	/**
-	 * Prefix that identifies this extension's own block text. The dedupe
-	 * uses it to tell the relay's own block (allow first, suppress
-	 * duplicates) apart from everything else. Use a prefix that appears
-	 * at the start of your block's directive line.
-	 */
+	/** Prefix identifying this extension's own block text, for dedupe. */
 	directivePrefix: string;
 	/** Returns the block text to inject on the first turn. */
 	block: () => string;
-	/**
-	 * When false, the relay path stays off for this session (e.g. the
-	 * block's source document is missing and only a gap marker would be
-	 * queued). Default: true.
-	 */
+	/** When false, the relay path stays off for this session. Default: true. */
 	blockReady?: () => boolean;
 	/** Called from the module's session_start handler, before the relay path arms. */
 	onSessionStart?: (ctx: ExtensionContext) => void;
@@ -152,21 +72,21 @@ interface ImagePart {
 	mimeType: string;
 }
 
-interface PendingMessage {
-	text: string;
-	images?: Array<ImagePart>;
-	sid: string;
-}
-
-interface SessionEntry {
-	type?: string;
+interface Entry {
 	customType?: string;
 	data?: HandshakeData;
+	type?: string;
 	message?: { role?: string; content?: unknown };
 }
 
-function sleep(ms: number): Promise<void> {
-	return new Promise((r) => setTimeout(r, ms));
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+async function waitUntil(pred: () => boolean, attempts: number, ms: number): Promise<boolean> {
+	for (let i = 0; i < attempts; i++) {
+		await sleep(ms);
+		if (pred()) return true;
+	}
+	return false;
 }
 
 export function createFirstTurnRelay(
@@ -177,287 +97,229 @@ export function createFirstTurnRelay(
 		? (...args: unknown[]) => console.error(`[first-turn-relay:${config.label}]`, ...args)
 		: () => {};
 
-	const firstTurnDelivered = new Set<string>();
-	const observedSessions = new Set<string>();
-	const relayedSessions = new Set<string>();
-	let pendingFirstMessage: PendingMessage | null = null;
-	let heldQueued = false;
-	let relayUserMsgPending = false;
+	function notify(ctx: ExtensionContext, kind: "info" | "warning" | "error", message: string) {
+		if (ctx.hasUI) ctx.ui.notify(message, kind);
+	}
+
+	const claimed = new Set<string>(); // sessions whose first message this extension took
+	const observed = new Set<string>(); // sessions whose relay path has started
+	const relayed = new Set<string>(); // sessions whose relay block was queued
+	let pending: { text: string; images?: ImagePart[]; sid: string; queued: boolean } | null = null;
+	let awaitingUserMsg = false;
 	let blockDelivered = false;
 	let proxyActive = false;
 	let slotHolderUserMsg = "";
 
-	function readEntries(ctx: ExtensionContext): SessionEntry[] {
+	function readEntries(ctx: ExtensionContext): Entry[] {
 		try {
-			return ctx.sessionManager.getEntries() as SessionEntry[];
+			return ctx.sessionManager.getEntries() as Entry[];
 		} catch {
 			return [];
 		}
 	}
 
-	function findSlotHolderEntry(ctx: ExtensionContext): SessionEntry | undefined {
-		return readEntries(ctx).find(
-			(e) => e && e.customType === HANDSHAKE_TYPE && e.data && e.data.role === "slot-holder",
-		);
+	const isHandshake = (e: Entry) => !!e && e.customType === HANDSHAKE_TYPE && !!e.data;
+	function slotHolderEntry(ctx: ExtensionContext): Entry | undefined {
+		return readEntries(ctx).find((e) => isHandshake(e) && e.data!.role === "slot-holder");
 	}
-
-	function hasRelayEntry(ctx: ExtensionContext): boolean {
-		return readEntries(ctx).some(
-			(e) => e && e.customType === HANDSHAKE_TYPE && e.data && e.data.role === "relay",
-		);
+	function hasRelay(ctx: ExtensionContext): boolean {
+		return readEntries(ctx).some((e) => isHandshake(e) && e.data!.role === "relay");
 	}
-
-	function hasPriorUser(ctx: ExtensionContext): boolean {
-		return readEntries(ctx).some(
-			(e) => e && e.type === "message" && e.message && e.message.role === "user",
-		);
-	}
-
-	function userEntries(ctx: ExtensionContext): Array<{ text: string; images?: Array<ImagePart> }> {
-		const out: Array<{ text: string; images?: Array<ImagePart> }> = [];
+	function userEntryTexts(ctx: ExtensionContext): string[] {
+		const out: string[] = [];
 		for (const e of readEntries(ctx)) {
 			if (!e || e.type !== "message" || !e.message || e.message.role !== "user") continue;
 			const c = e.message.content;
 			if (typeof c === "string") {
-				out.push({ text: c });
+				out.push(c);
 			} else if (Array.isArray(c)) {
-				let text = "";
-				const images: Array<ImagePart> = [];
-				for (const p of c as Array<{ type?: string; text?: string; data?: string; mimeType?: string }>) {
-					if (!p || typeof p !== "object") continue;
-					if (p.type === "text" && typeof p.text === "string") text += (text ? " " : "") + p.text;
-					else if (p.type === "image" && p.data && p.mimeType)
-						images.push({ type: "image", data: p.data, mimeType: p.mimeType });
-				}
-				out.push({ text, images: images.length > 0 ? images : undefined });
+				const parts = (c as Array<{ type?: string; text?: string }>)
+					.filter((p) => p && typeof p === "object" && p.type === "text" && typeof p.text === "string")
+					.map((p) => p.text);
+				out.push(parts.join(" "));
 			}
 		}
 		return out;
 	}
 
-	// -------------------------------------------------------------------
+	function announce(ctx: ExtensionContext, data: HandshakeData) {
+		try {
+			pi.appendEntry(HANDSHAKE_TYPE, data);
+			log("announced", JSON.stringify(data));
+		} catch (e) {
+			log("announce FAILED:", String(e));
+		}
+	}
+
+	// Send text (plus optional images), optionally as a follow-up.
+	async function deliver(text: string, images: ImagePart[] | undefined, deliverAs?: "followUp") {
+		const opts = deliverAs ? { deliverAs } : undefined;
+		if (images && images.length > 0) {
+			await pi.sendUserMessage([{ type: "text", text }, ...images] as never, opts);
+		} else {
+			await pi.sendUserMessage(text, opts);
+		}
+	}
+
+	// Queue this extension's block as a follow-up. True if it went in.
+	async function queueRelayBlock(sid: string): Promise<boolean> {
+		try {
+			await deliver(config.block(), undefined, "followUp");
+			relayed.add(sid);
+			return true;
+		} catch (err) {
+			log("relay block queue failed:", String(err));
+			return false;
+		}
+	}
+
 	// Slot-holder path: claim the first user message of a new session.
 	// Only the extension whose input handler runs first in registration
-	// order reaches this code; the others' input handlers are skipped
-	// for the claimed event ('handled' short-circuits dispatch).
-	// -------------------------------------------------------------------
-	pi.on("input", async (event: InputEvent, ctx: ExtensionContext) => {
-		if (event.source === "extension") return { action: "continue" };
-		if (event.streamingBehavior !== undefined) return { action: "continue" };
-		if (!event.text || !event.text.trim()) return { action: "continue" };
+	// order reaches the claim; 'handled' short-circuits dispatch.
+	async function claimSlot(event: InputEvent, ctx: ExtensionContext): Promise<"handled" | "continue"> {
+		if (event.streamingBehavior !== undefined) return "continue";
+		if (!event.text || !event.text.trim()) return "continue";
 		const sid = ctx.sessionManager.getSessionId();
-		if (firstTurnDelivered.has(sid)) return { action: "continue" };
-		if (hasPriorUser(ctx)) return { action: "continue" };
-		firstTurnDelivered.add(sid);
+		if (claimed.has(sid) || userEntryTexts(ctx).length > 0) return "continue";
+		claimed.add(sid);
 		proxyActive = true;
-		log('proxy engaged, sid =', sid);
-		if (ctx.hasUI) ctx.ui.notify(`${config.label}: proxying the first turn`, 'info');
+		log("proxy engaged, sid =", sid);
+		notify(ctx, "info", `${config.label}: proxying the first turn`);
+		announce(ctx, { role: "slot-holder", sid, userMsg: event.text.trim() });
+		pending = { text: event.text, images: event.images as ImagePart[] | undefined, sid, queued: false };
 		try {
-			pi.appendEntry(HANDSHAKE_TYPE, { role: 'slot-holder', sid, userMsg: event.text.trim() });
-			log('slot-holder announced, sid =', sid);
-		} catch (e) {
-			log('slot-holder announce FAILED:', String(e));
-		}
-		pendingFirstMessage = { text: event.text, images: event.images as Array<ImagePart> | undefined, sid };
-		try {
-			await pi.sendUserMessage(config.block(), { deliverAs: "followUp" });
-			// Wait for a relay to announce itself (it announces at
-			// session_start + ~350ms). The relay queues its block
-			// immediately after announcing, so when one shows up, a short
-			// settle delay puts the user's message behind the relay's
-			// block in the follow-up queue. With no relay, queue right
-			// away.
-			let relayAnnounced = false;
-			for (let attempt = 0; attempt < TIMING.proxyRelayWaitAttempts; attempt++) {
-				await sleep(TIMING.proxyRelayWaitMs);
-				relayAnnounced = hasRelayEntry(ctx);
-				if (relayAnnounced) break;
-			}
+			await deliver(config.block(), undefined, "followUp");
+			// A relay announces at session_start + ~350ms and queues its
+			// block right after, so a short settle puts the user message
+			// behind the relay's block in the follow-up queue.
+			const relayAnnounced = await waitUntil(() => hasRelay(ctx), TIMING.proxyRelayWaitAttempts, TIMING.proxyRelayWaitMs);
 			if (relayAnnounced) await sleep(TIMING.proxyRelaySettleMs);
-			log('queueing user message, relayAnnounced =', relayAnnounced);
-			if (event.images && event.images.length > 0) {
-				await pi.sendUserMessage(
-					[{ type: "text", text: event.text }, ...(event.images as unknown[])] as never,
-					{ deliverAs: "followUp" },
-				);
-			} else {
-				await pi.sendUserMessage(event.text, { deliverAs: "followUp" });
-			}
-			heldQueued = true;
+			log("queueing user message, relayAnnounced =", relayAnnounced);
+			await deliver(event.text, event.images as ImagePart[] | undefined, "followUp");
+			pending.queued = true;
 		} catch (err) {
-			log('follow-up queue failed:', String(err));
-			if (ctx.hasUI)
-				ctx.ui.notify(
-					`${config.label}: follow-up queue failed (${String(err)}); backstop delivery after the block run`,
-					'warning',
-				);
+			log("follow-up queue failed:", String(err));
+			notify(ctx, "warning", `${config.label}: follow-up queue failed (${String(err)}); backstop delivery after the block run`);
 		}
-		return { action: "handled" };
-	});
+		return "handled";
+	}
 
-	// -------------------------------------------------------------------
-	// Relay path: session_start. If the slot was not taken by this
-	// extension's proxy, announce as relay and queue the block.
-	// -------------------------------------------------------------------
-	pi.on("session_start", (_event: unknown, ctx: ExtensionContext) => {
-		config.onSessionStart?.(ctx);
-		if (config.blockReady && !config.blockReady()) {
-			log('relay path off: block not ready');
-			return;
-		}
-		log('relay path entering, proxyActive =', proxyActive);
+	// Relay path: if this extension's proxy did not take the slot,
+	// announce and queue the block. The dedupe below then re-queues the
+	// slot-holder's delivery of the user's message behind it.
+	function relayPath(ctx: ExtensionContext) {
 		void (async () => {
-			let proxyEngaged = false;
-			for (let attempt = 0; attempt < TIMING.relayPollAttempts; attempt++) {
-				await sleep(TIMING.relayPollMs);
-				if (proxyActive) {
-					proxyEngaged = true;
-					break;
-				}
-			}
-			log('relay check done, proxyEngaged =', proxyEngaged);
-			if (proxyEngaged) return;
+			// The proxy decides within milliseconds of the user message, so
+			// a few hundred ms of polling settles whether it engaged.
+			if (await waitUntil(() => proxyActive, TIMING.relayPollAttempts, TIMING.relayPollMs)) return;
 			const sid = ctx.sessionManager.getSessionId();
-			relayUserMsgPending = true;
-			observedSessions.add(sid);
-			try {
-				const slotHolderEntry = findSlotHolderEntry(ctx);
-				slotHolderUserMsg =
-					slotHolderEntry && slotHolderEntry.data && typeof slotHolderEntry.data.userMsg === 'string'
-						? slotHolderEntry.data.userMsg
-						: '';
-				pi.appendEntry(HANDSHAKE_TYPE, { role: 'relay', sid });
-				log('relay announced, peerSeen =', Boolean(slotHolderEntry), 'userMsgLen =', slotHolderUserMsg.length);
-			} catch (e) {
-				log('relay announce FAILED:', String(e));
-			}
-			try {
-				await pi.sendUserMessage(config.block(), { deliverAs: "followUp" });
-				relayedSessions.add(sid);
-				log('relay block queued, sid =', sid);
-			} catch (err) {
-				observedSessions.delete(sid);
-				relayUserMsgPending = false;
-				log('early queue failed:', String(err));
-				if (ctx.hasUI) ctx.ui.notify(`${config.label}: early queue failed — ${String(err)}`, 'error');
-			}
-		})();
-	});
-
-	// -------------------------------------------------------------------
-	// agent_settled: backstop delivery of the held user message (only if
-	// the follow-up queue failed and no relay is present), plus the
-	// maybeRelay fallback for non-protocol slot-holders.
-	// -------------------------------------------------------------------
-	function maybeRelay(ctx: ExtensionContext) {
-		const sid = ctx.sessionManager.getSessionId();
-		if (observedSessions.has(sid) || relayedSessions.has(sid)) return;
-		// If the proxy took the slot, the proxy path is self-contained and
-		// the relay must not fire.
-		if (proxyActive) return;
-		const entries = userEntries(ctx);
-		if (entries.some((m) => m.text.trimStart().startsWith(config.directivePrefix))) return;
-		// The session must have reached its first run; a settled session
-		// with no user entries yet is not a stolen slot, just a quiet one.
-		if (entries.length === 0) return;
-		observedSessions.add(sid);
-		relayUserMsgPending = true;
-		if (ctx.hasUI)
-			ctx.ui.notify(
-				`${config.label}: first turn taken by another extension; relaying after its block`,
-				'info',
-			);
-		void (async () => {
-			try {
-				await pi.sendUserMessage(config.block(), { deliverAs: "followUp" });
-				relayedSessions.add(sid);
-			} catch (err) {
-				observedSessions.delete(sid);
-				log('relay failed:', String(err));
-				if (ctx.hasUI) ctx.ui.notify(`${config.label}: relay failed — ${String(err)}`, 'error');
+			observed.add(sid);
+			awaitingUserMsg = true;
+			const holder = slotHolderEntry(ctx);
+			slotHolderUserMsg = holder && typeof holder.data.userMsg === "string" ? holder.data.userMsg : "";
+			announce(ctx, { role: "relay", sid });
+			if (!await queueRelayBlock(sid)) {
+				observed.delete(sid);
+				awaitingUserMsg = false;
+				notify(ctx, "error", `${config.label}: early queue failed`);
+			} else {
+				log("relay block queued, sid =", sid);
 			}
 		})();
 	}
 
+	// Dedupe path: follow-ups loop back through the input pipeline as
+	// extension-source inputs. Re-queue exactly the slot-holder's
+	// announced user message so it lands behind this extension's block;
+	// the relay's own block passes once (while the user message is still
+	// pending) and is suppressed on duplicates; anything else passes
+	// through untouched.
+	async function dedupe(event: InputEvent, ctx: ExtensionContext): Promise<"handled" | "continue"> {
+		if (proxyActive) return "continue";
+		const t = (event.text ?? "").trim();
+		if (!t || !awaitingUserMsg) return "continue";
+		if (t.startsWith(config.directivePrefix)) {
+			if (blockDelivered) {
+				notify(ctx, "info", `${config.label}: suppressing duplicate block`);
+				return "handled";
+			}
+			blockDelivered = true;
+			return "continue";
+		}
+		if (slotHolderUserMsg && t !== slotHolderUserMsg) return "continue";
+		awaitingUserMsg = false;
+		notify(ctx, "info", `${config.label}: relaying first user message after block`);
+		try {
+			await deliver(event.text ?? "", event.images as ImagePart[] | undefined, "followUp");
+		} catch (err) {
+			log("dedupe re-queue failed:", String(err));
+		}
+		return "handled";
+	}
+
+	// Fallback for slot-holders that do not implement the protocol: on
+	// the first settlement of a session whose first turn went elsewhere,
+	// queue this extension's block after that run.
+	function maybeRelay(ctx: ExtensionContext) {
+		const sid = ctx.sessionManager.getSessionId();
+		if (observed.has(sid) || relayed.has(sid) || proxyActive) return;
+		const texts = userEntryTexts(ctx);
+		if (texts.some((t) => t.trimStart().startsWith(config.directivePrefix))) return;
+		// A settled session with no user entries yet is quiet, not stolen.
+		if (texts.length === 0) return;
+		observed.add(sid);
+		awaitingUserMsg = true;
+		notify(ctx, "info", `${config.label}: first turn taken by another extension; relaying after its block`);
+		void (async () => {
+			// On failure the observed mark is cleared so the fallback can
+			// retry on a later settlement; awaitingUserMsg is left as-is.
+			if (!await queueRelayBlock(sid)) {
+				observed.delete(sid);
+				notify(ctx, "error", `${config.label}: relay failed`);
+			}
+		})();
+	}
+
+	pi.on("input", async (event: InputEvent, ctx: ExtensionContext) => {
+		const action = event.source === "extension" ? await dedupe(event, ctx) : await claimSlot(event, ctx);
+		return action === "handled" ? { action: "handled" } : { action: "continue" };
+	});
+
+	pi.on("session_start", (_event: unknown, ctx: ExtensionContext) => {
+		config.onSessionStart?.(ctx);
+		if (config.blockReady && !config.blockReady()) {
+			log("relay path off: block not ready");
+			return;
+		}
+		log("relay path entering, proxyActive =", proxyActive);
+		relayPath(ctx);
+	});
+
 	pi.on("agent_settled", async (_event: unknown, ctx: ExtensionContext) => {
-		if (pendingFirstMessage && pendingFirstMessage.sid === ctx.sessionManager.getSessionId()) {
-			const relayPresent = hasRelayEntry(ctx);
-			if (relayPresent) {
-				// The relay re-queues the user's message after its own
-				// block; the slot-holder's backstop stands down.
-				pendingFirstMessage = null;
-				log('backstop stand down: relay announced, user message left to relay');
-			} else if (!heldQueued) {
-				const m = pendingFirstMessage;
-				pendingFirstMessage = null;
+		const sid = ctx.sessionManager.getSessionId();
+		if (pending && pending.sid === sid) {
+			if (hasRelay(ctx)) {
+				// The relay re-queues the user message after its block.
+				pending = null;
+				log("backstop stand down: relay announced");
+			} else if (!pending.queued) {
+				const m = pending;
+				pending = null;
 				try {
-					if (m.images && m.images.length > 0) {
-						await pi.sendUserMessage(
-							[{ type: "text", text: m.text }, ...(m.images as unknown[])] as never,
-						);
-					} else {
-						await pi.sendUserMessage(m.text);
-					}
+					await deliver(m.text, m.images);
 				} catch (err) {
-					log('backstop delivery failed:', String(err));
+					log("backstop delivery failed:", String(err));
 				}
 			} else {
-				// Already queued by the proxy path; nothing to deliver.
-				pendingFirstMessage = null;
+				pending = null;
 			}
 		}
 		config.onSettled?.(ctx);
 		maybeRelay(ctx);
 	});
 
-	// -------------------------------------------------------------------
-	// Dedupe path (relay only): the slot-holder's delivery of the user's
-	// message arrives as a source "extension" input. Re-queue exactly the
-	// announced userMsg so it lands behind the relay's block. Any other
-	// text passes through untouched; the relay's own block is allowed
-	// once and suppressed on duplicates.
-	// -------------------------------------------------------------------
-	pi.on("input", async (event: InputEvent, ctx: ExtensionContext) => {
-		if (event.source !== "extension") return { action: "continue" };
-		if (proxyActive) return { action: "continue" };
-		const t = (event.text ?? "").trim();
-		if (!t) return { action: "continue" };
-		if (!relayUserMsgPending) return { action: "continue" };
-		// The relay's own block, if it loops back through the input
-		// pipeline: allow the first delivery, suppress duplicates.
-		if (t.startsWith(config.directivePrefix)) {
-			if (blockDelivered) {
-				if (ctx.hasUI) ctx.ui.notify(`${config.label}: suppressing duplicate block`, 'info');
-				return { action: "handled" };
-			}
-			blockDelivered = true;
-			return { action: "continue" };
-		}
-		// Only the slot-holder's announced user message is re-queued.
-		// Any other text (e.g. the slot-holder's own block arriving after
-		// the relay armed) passes through untouched.
-		if (slotHolderUserMsg && t !== slotHolderUserMsg) {
-			return { action: "continue" };
-		}
-		relayUserMsgPending = false;
-		if (ctx.hasUI) ctx.ui.notify(`${config.label}: relaying first user message after block`, 'info');
-		try {
-			if (event.images && event.images.length > 0) {
-				await pi.sendUserMessage(
-					[{ type: "text", text: event.text }, ...(event.images as unknown[])] as never,
-					{ deliverAs: "followUp" },
-				);
-			} else {
-				await pi.sendUserMessage(event.text, { deliverAs: "followUp" });
-			}
-		} catch (err) {
-			log('dedupe re-queue failed:', String(err));
-		}
-		return { action: "handled" };
-	});
-
 	return {
 		proxyActive: () => proxyActive,
-		relayed: (sid: string) => relayedSessions.has(sid),
+		relayed: (sid: string) => relayed.has(sid),
 	};
 }
