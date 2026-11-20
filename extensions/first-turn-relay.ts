@@ -208,10 +208,24 @@ export function createFirstTurnRelay(
 	// announce and queue the block. The dedupe below then re-queues the
 	// slot-holder's delivery of the user's message behind it.
 	function relayPath(ctx: ExtensionContext) {
+		// A session that already has user messages is a resume or a
+		// reload, not a new session; its first turn is in the transcript.
+		if (userEntryTexts(ctx).length > 0) {
+			log("relay path off: session already has user entries");
+			return;
+		}
 		void (async () => {
-			// The proxy decides within milliseconds of the user message, so
-			// a few hundred ms of polling settles whether it engaged.
-			if (await waitUntil(() => proxyActive, TIMING.relayPollAttempts, TIMING.relayPollMs)) return;
+			// Wait for the first user message instead of betting on a
+			// timer: /new and a slow first reply must not get blocks
+			// injected into an empty session. No deadline; the wait
+			// dies with the instance on reload or session end.
+			while (!proxyActive && userEntryTexts(ctx).length === 0) {
+				await sleep(TIMING.relayPollMs);
+			}
+			if (proxyActive) return;
+			// A non-protocol slot-holder took the turn; the maybeRelay
+			// fallback picks this up at the first settlement.
+			if (!slotHolderEntry(ctx)) return;
 			const sid = ctx.sessionManager.getSessionId();
 			observed.add(sid);
 			awaitingUserMsg = true;

@@ -22,8 +22,11 @@ proxy guard clauses, and user messages carrying images.
 
 - `first-turn-relay.original.ts` — the original implementation (commit
   `07c4a10`), kept as the behavioral oracle.
-- `baseline.json` — the reference trace, generated from the original and
-  validated against the current module.
+- `baseline.json` — the reference trace. It was generated from the
+  original implementation and is regenerated from the module whenever a
+  behavior change is deliberately approved. The current baseline
+  reflects the reload-guard behavior, under which S4 and S4b differ
+  from the original's traces.
 
 To regenerate the baseline after a reviewed, intentional behavior change:
 

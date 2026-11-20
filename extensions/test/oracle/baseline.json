@@ -159,14 +159,6 @@
   ],
   "trace": [
    {
-    "op": "entry",
-    "type": "relay-handshake",
-    "data": {
-     "role": "relay",
-     "sid": "SID"
-    }
-   },
-   {
     "op": "send",
     "kind": "text",
     "text": "P1 directive block",
@@ -178,22 +170,7 @@
   "results": [
    "passed"
   ],
-  "trace": [
-   {
-    "op": "entry",
-    "type": "relay-handshake",
-    "data": {
-     "role": "relay",
-     "sid": "SID"
-    }
-   },
-   {
-    "op": "send",
-    "kind": "text",
-    "text": "P1 directive block",
-    "deliverAs": "followUp"
-   }
-  ]
+  "trace": []
  },
  "S4c maybeRelay (no seed)": {
   "results": [
